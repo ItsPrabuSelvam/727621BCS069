@@ -15,18 +15,24 @@ app.get('/categories/:categoryname/products', async (req, res) => {
 
     const Affor_URL = "http://20.244.56.144/test";
     const companyName = "FLP";
+    let page = 0;
 
     const categoryname = req.params.categoryname;
     let n = parseInt(req.query.n);
-    const page = req.query.page ? parseInt(req.query.page) : 0;
     const sort = req.query.sort ? req.query.sort : null;
+    const ord = req.query.order ? req.query.order : "ASC";
 
-    if(n>10)
-        {
-            n = n%10;
+    const order = (ord.toLowerCase()==="asc") ? true : (ord.toLowerCase() === "des" ? false : (res.status(400).send("Bad Request on Order. option ASC or DES")) )
+
+
+
+    if (n > 10) {
+        page = req.query.page ? parseInt(req.query.page) : 0;
+        if (page == 0) {
+            res.status(412).send("Error : If Number is Greater than 10.Then You Should Add a page param");
         }
+    }
 
-    n=page*10 + n;
 
     const minPrice = req.query.minPrice ? req.query.minPrice : "1";
     const maxPrice = req.query.maxPrice ? req.query.maxPrice : "10000";
@@ -55,7 +61,7 @@ app.get('/categories/:categoryname/products', async (req, res) => {
         console.log(url)
 
         const result = await axios.get(url, {
-            params : parameter,
+            params: parameter,
             headers: {
                 Authorization: `Bearer ${AccessToken}`
             }
@@ -63,12 +69,45 @@ app.get('/categories/:categoryname/products', async (req, res) => {
         //console.log('hiii');
         //console.log(result);
         let data = result.data;
-        if(page >0)
-            {
-                data = data.slice((page) * 10,data.length);
-            }
 
-        
+        if (sort !== null) {
+            switch(sort.toLowerCase())
+            {
+                case "rating":
+                    {
+                        order ? data.sort((a,b)=> a.rating - b.rating) : data.sort((b,a)=> a.rating - b.rating)
+                        break;
+                    }
+                case "price":
+                    {
+                        order ? data.sort((a,b)=> a.price - b.price) : data.sort((b,a)=> a.price - b.price)
+                        break;
+                    }
+                case "company":
+                    {
+                        order ? data.sort((a,b)=> a.companyName - b.companyName) : data.sort((b,a)=> a.companyName - b.companyName)
+                        break;
+                    }
+                case "discount":
+                    {
+                        order ? data.sort((a,b)=> a.discount - b.discount) : data.sort((b,a)=> a.discount - b.discount);
+                        break;
+                    }
+                default:
+                    {
+                        res.status(400).send("The Sorting Order Should be Either - Rating,Company,Price,Discount")
+                    }
+            }
+        }
+
+
+        console.log(data.length);
+        if (page > 0) {
+            data = data.slice((page - 1) * 10, Math.min(data.length, page * 10));
+            console.log(data.length)
+        }
+
+
 
 
         const productsWithIds = data.map(product => ({
@@ -76,7 +115,8 @@ app.get('/categories/:categoryname/products', async (req, res) => {
             id: uuidv4()
         }));
 
-        console.log(productsWithIds);
+
+
         res.json({
             category: categoryname,
             products: productsWithIds
@@ -90,8 +130,11 @@ app.get('/categories/:categoryname/products', async (req, res) => {
 
 
 
-    
 
 
-    
+
+
 })
+
+
+
