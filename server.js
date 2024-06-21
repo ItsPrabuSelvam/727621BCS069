@@ -10,6 +10,12 @@ app.listen(port, () => {
     console.log(`listening on port : ${port}`)
 });
 
+let ProductDetailsMap  = new Map();
+
+
+
+
+
 
 app.get('/categories/:categoryname/products', async (req, res) => {
 
@@ -102,9 +108,11 @@ app.get('/categories/:categoryname/products', async (req, res) => {
 
 
         console.log(data.length);
+        
         if (page > 0) {
             data = data.slice((page - 1) * 10, Math.min(data.length, page * 10));
             console.log(data.length)
+
         }
 
 
@@ -115,6 +123,16 @@ app.get('/categories/:categoryname/products', async (req, res) => {
             id: uuidv4()
         }));
 
+        let newMap = new Map();
+        productsWithIds.forEach(element => {
+            newMap.set(element.id, element);
+        });
+
+        ProductDetailsMap.set(categoryname.toLowerCase() , newMap);
+
+
+
+        console.log(ProductDetailsMap);
 
 
         res.json({
@@ -137,4 +155,32 @@ app.get('/categories/:categoryname/products', async (req, res) => {
 })
 
 
+app.get('/categories/:categoryname/products/:productid', async (req, res) => {
+
+    const categoryname = req.params.categoryname;
+    const productid = req.params.productid;
+
+    const cat = ProductDetailsMap.get(categoryname.toLowerCase());
+    let result = null;
+
+    console.log(cat);
+    
+    
+    if (cat === null || cat === undefined) {
+        res.status(404).send("The Requested File is Not in the Server");
+    } else {
+        const result = cat.get(productid);
+    
+        if (result === null || result === undefined) {
+            res.status(404).send("The Requested File is Not in the Server");
+        } else {
+            res.status(200).json(result);
+        }
+    }
+    
+
+
+
+
+})
 
